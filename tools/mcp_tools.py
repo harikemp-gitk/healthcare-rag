@@ -29,3 +29,14 @@ async def get_calendar_tools(client: MultiServerMCPClient):
     """Get calendar tools from the Composio MCP Server."""
     tools = await client.get_tools()
     return [t for t in tools if "calendar" in t.name.lower()]
+
+
+async def get_gmail_tools(client: MultiServerMCPClient):
+    """Get Gmail tools from the Composio MCP Server."""
+    tools = await client.get_tools()
+    return [t for t in tools if "gmail" in t.name.lower()]
+
+async def get_all_tools(client: MultiServerMCPClient):
+    """Get all tools from the Composio MCP Server."""
+    tools = await client.get_tools()
+    return tools

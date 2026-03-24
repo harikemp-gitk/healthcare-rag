@@ -8,6 +8,7 @@ This module defines the FAQGraph class, which constructs a knowledge graph from 
 from langgraph.graph import StateGraph, MessagesState, START
 from langgraph.prebuilt import ToolNode, tools_condition
 from agents.faq_agent import faq_node, tools
+from config.memory import checkpointer, store
 
 builder = StateGraph(MessagesState)
 
@@ -18,4 +19,4 @@ builder.add_edge(START, "faq_agent")
 builder.add_conditional_edges("faq_agent", tools_condition)
 builder.add_edge("tools", "faq_agent")
 
-faq_graph = builder.compile()
+faq_graph = builder.compile(checkpointer=checkpointer, store=store)

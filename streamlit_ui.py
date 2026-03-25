@@ -35,7 +35,8 @@ st.markdown(
     """
     <style>
     .stApp {
-        background-color: #e8f4f8;
+        background-color: #9fc0d8;
+        color: #FFFFFF;
     }
     </style>
     """,
@@ -60,7 +61,11 @@ if "mcp_client" not in st.session_state:
 def connect_full_system():
     """Try to connect to Composio MCP and build the full multi-agent graph."""
     try:
-        graph, client = asyncio.run(build_workflow())
+        # Use a manual loop to avoid closing it (which asyncio.run does), 
+        # keeping the MCP client connection alive.
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        graph, client = loop.run_until_complete(build_workflow())
         st.session_state.graph = graph
         st.session_state.mcp_client = client
         st.session_state.mode = "full"
@@ -71,7 +76,7 @@ def connect_full_system():
 
 # --- Sidebar ---
 with st.sidebar:
-    st.title("Healthcare Clinical Facility")
+    st.title("HealthFirst Clinical Facility")
     st.caption("Multi-Agent Appointment System")
 
     st.divider()
@@ -79,7 +84,7 @@ with st.sidebar:
     # Mode selector
     st.subheader("Mode")
     if st.session_state.mode == "faq_only":
-        st.info("FAQ Only (no MCP)")
+        st.info("Frequently Asked Questions (FAQ) Mode")
         if st.button("Connect Full System"):
             with st.spinner("Connecting to Composio MCP..."):
                 if connect_full_system():
@@ -150,7 +155,7 @@ with st.sidebar:
 #         return graph, None, "FAQ-Only Mode"
     
 # --- Main Chat Area ---
-st.title("Healthcare Clinical Facility")
+st.title("🩺 HealthFirst Clinical Facility")
 if st.session_state.mode == "full":
     st.caption("Ask questions, book appointments, or request confirmations. The supervisor routes automatically.")
 else:
@@ -179,92 +184,23 @@ if prompt := st.chat_input("Type your message..."):
     graph = st.session_state.graph
 
     with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            if st.session_state.mode == "full":
-                result = asyncio.run(graph.ainvoke(
-                    {"messages": [("user", prompt)]},
-                    config,
-                ))
-            else:
-                result = graph.invoke(
-                    {"messages": [("user", prompt)]},
-                    config,
-                )
-            response = _extract_text(result["messages"])
-            st.markdown(response)
-
-    st.session_state.messages.append({"role": "assistant", "content": response})
-
-
-# def main():
-#     st.set_page_config(page_title="HealthFirst Clinic", page_icon="🏥")
-    
-#     st.title("🏥 HealthFirst Medical Clinic")
-#     st.markdown("Welcome to our intelligent scheduling assistant.")
-
-#     # Sidebar configuration
-#     st.sidebar.header("System Status")
-    
-#     # Initialize graph (cached)
-#     graph, client, mode = get_graph_and_client()
-#     st.sidebar.success(f"Running in: {mode}")
-
-#     # Session State for conversation
-#     if "thread_id" not in st.session_state:
-#         st.session_state.thread_id = str(uuid.uuid4())[:8]
-#     if "messages" not in st.session_state:
-#         st.session_state.messages = []
-    
-#     st.sidebar.markdown(f"**Thread ID:** `{st.session_state.thread_id}`")
-#     if st.sidebar.button("Reset Conversation"):
-#         st.session_state.thread_id = str(uuid.uuid4())[:8]
-#         st.session_state.messages = []
-#         st.rerun()
-
-#     # Display Chat History
-#     for msg in st.session_state.messages:
-#         role = msg["role"]
-#         content = msg["content"]
-#         with st.chat_message(role):
-#             st.markdown(content)
-
-#     # User Input
-#     if user_input := st.chat_input("How can I help you today?"):
-#         # Display user message
-#         st.session_state.messages.append({"role": "user", "content": user_input})
-#         with st.chat_message("user"):
-#             st.markdown(user_input)
-
-#         # Prepare config
-#         config = {
-#             "configurable": {
-#                 "thread_id": st.session_state.thread_id,
-#                 "user_id": "streamlit_user"
-#             }
-#         }
-
-#         # Generate response
-#         with st.chat_message("assistant"):
-#             message_placeholder = st.empty()
-#             message_placeholder.markdown("Thinking...")
-            
-#             try:
-#                 # We need a new loop for the invoke since we are inside Streamlit's flow
-#                 # asyncio.run handles creating/closing a loop for this specific call
-#                 response = asyncio.run(graph.ainvoke(
-#                     {"messages": [("user", user_input)]}, 
-#                     config
-#                 ))
-                
-#                 bot_text = _extract_text(response["messages"])
-#                 message_placeholder.markdown(bot_text)
-                
-#                 # Update history
-#                 st.session_state.messages.append({"role": "assistant", "content": bot_text})
-                
-#             except Exception as e:
-#                 message_placeholder.error(f"Error: {str(e)}")
+        with st.spinner("Answering your question, please wait..."):
+            try:
+                if st.session_state.mode == "full":
+                    # Create a new loop for this interaction
+                    result = asyncio.run(graph.ainvoke(
+                        {"messages": [("user", prompt)]},
+                        config,
+                    ))
+                else:
+                    result = graph.invoke(
+                        {"messages": [("user", prompt)]},
+                        config,
+                    )
+                response = _extract_text(result["messages"])
+                st.markdown(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+            except Exception as e:
+                st.error(f"Error occurred: {str(e)}")
 
 
-# if __name__ == "__main__":
-#     main()

@@ -1,4 +1,4 @@
-from langgraph.graph import MessagesState
+from agents.state import AgentState
 from config.models import llm
 from tools.rag_tools import search_clinic_knowledge
 
@@ -22,7 +22,7 @@ Be friendly, concise, and professional.
 """
 
 
-def faq_node(state: MessagesState):
+def faq_node(state: AgentState):
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]+ state["messages"]
     response = llm_with_tools.invoke(messages)
     return {"messages": [response]}

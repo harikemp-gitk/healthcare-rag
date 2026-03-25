@@ -1,6 +1,6 @@
 """Confirmation Agent : This is responsible for confirming the appointment details with the user
 before finalizing the booking."""
-from langgraph.graph import MessagesState
+from agents.state import AgentState 
 from config.models import llm
 
 
@@ -26,7 +26,7 @@ def create_confirmation_node(gmail_tools):
     Create a confirmation node function that uses the provided Gmail tools.
     """
     llm_with_tools = llm.bind_tools(gmail_tools)
-    def confirmation_node(state: MessagesState):
+    def confirmation_node(state: AgentState):
         message = [{"role": "system", "content": SYSTEM_PROMPT},]+state["messages"] 
         response = llm_with_tools.invoke(message)
         return {"messages": [response]}
